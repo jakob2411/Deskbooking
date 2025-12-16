@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Office Booking</title>
+    <style>
+        :root {
+            --bg-color: #F5F5F7; /* Apple light gray */
+            --card-bg: #FFFFFF;
+            --text-primary: #1D1D1F;
+            --text-secondary: #86868B;
+            --accent: #0071E3; /* Apple Blue */
+            --accent-hover: #0077ED;
+            --occupied: #FF3B30; /* Apple Red */
+            --my-booking: #34C759; /* Apple Green */
+            --radius: 18px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 900px;
+            width: 100%;
+        }
+
+        h1 {
+            font-weight: 600;
+            font-size: 40px;
+            letter-spacing: -0.003em;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 19px;
+            margin-bottom: 40px;
+            font-weight: 400;
+        }
+
+        /* Input Section */
+        .user-input {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px);
+            padding: 20px;
+            border-radius: var(--radius);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        input[type="text"] {
+            padding: 12px 16px;
+            font-size: 17px;
+            border: 1px solid #d2d2d7;
+            border-radius: 12px;
+            width: 250px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        input[type="text"]:focus {
+            border-color: var(--accent);
+        }
+
+        /* Download Button */
+        .download-btn {
+            padding: 12px 24px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 20px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .download-btn:hover {
+            background: var(--accent-hover);
+            transform: scale(1.02);
+        }
+
+        /* Grid Layout */
+        .grid-container {
+            display: grid;
+            gap: 20px;
+        }
+
+        .day-card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 25px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+            transition: transform 0.2s ease;
+        }
+        
+        .day-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #E5E5EA;
+            padding-bottom: 10px;
+        }
+        .day-name { font-size: 22px; font-weight: 600; }
+        .day-date { font-size: 22px; font-weight: 600; color: var(--text-primary); margin-left: 8px; }
+
+        .desk-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 12px;
+        }
+
+        .desk-btn {
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid #E5E5EA;
+            background: #FBFBFC;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .desk-btn:hover:not(:disabled) {
+            border-color: var(--accent);
+            transform: scale(1.02);
+        }
+
+        .desk-name { font-size: 14px; font-weight: 600; color: var(--text-secondary); }
+        .occupant-name { font-size: 13px; font-weight: 400; color: var(--text-primary); }
+
+        /* States */
+        .desk-btn.available {
+            /* default */
+        }
+        .desk-btn.occupied {
+            background-color: #FFF2F2; /* Light red bg */
+            border-color: transparent;
+            cursor: default;
+        }
+        .desk-btn.occupied .desk-name { color: var(--occupied); }
+        
+        .desk-btn.booked-by-me {
+            background-color: #E8FCEF; /* Light green bg */
+            border-color: var(--my-booking);
+            cursor: pointer;
+        }
+        .desk-btn.booked-by-me .desk-name { color: var(--my-booking); }
+        .desk-btn.booked-by-me:hover {
+            background-color: #FFE5E5; /* Light red on hover to indicate cancel */
+            border-color: var(--occupied);
+        }
+
+        /* Cancel text */
+        .cancel-text {
+            display: none;
+            font-size: 11px;
+            color: var(--occupied);
+            font-weight: 600;
+        }
+        .desk-btn.booked-by-me:hover .occupant-name {
+            display: none;
+        }
+        .desk-btn.booked-by-me:hover .cancel-text {
+            display: block;
+        }
+
+        /* Booking View vs Occupancy View Logic handled in JS */
+        
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+        .toast.show { opacity: 1; }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Office Seating</h1>
+        <div class="subtitle">Book your workspace for next week</div>
+
+        <div class="user-input">
+            <label style="font-weight: 500;">Who are you?</label>
+            <input type="text" id="username" placeholder="Enter your name" onchange="loadSchedule()">
+        </div>
+
+        <button class="download-btn" onclick="downloadSchedule()">📥 Download Schedule</button>
+
+        <div id="schedule-grid" class="grid-container">
+            </div>
+    </div>
+
+    <div id="toast" class="toast">Message</div>
+
+    <script>
+        let scheduleData = [];
+
+        async function loadSchedule() {
+            try {
+                const response = await fetch('/api/schedule');
+                const data = await response.json();
+                scheduleData = data.schedule;
+                renderGrid();
+            } catch (error) {
+                console.error('Error loading schedule:', error);
+            }
+        }
+
+        function renderGrid() {
+            const container = document.getElementById('schedule-grid');
+            const currentUser = document.getElementById('username').value.trim();
+            container.innerHTML = '';
+
+            scheduleData.forEach(day => {
+                const dayCard = document.createElement('div');
+                dayCard.className = 'day-card';
+
+                let desksHtml = '';
+                
+                day.desks.forEach(desk => {
+                    let className = 'desk-btn available';
+                    let label = 'Available';
+                    let isDisabled = '';
+                    let action = `onclick="bookDesk('${day.date}', '${desk.name}')"`;
+
+                    if (desk.occupant) {
+                        if (desk.occupant === currentUser) {
+                            className = 'desk-btn booked-by-me';
+                            label = 'You';
+                            action = `onclick="cancelBooking('${day.date}', '${desk.name}')"`;
+                        } else {
+                            className = 'desk-btn occupied';
+                            label = desk.occupant; // Always show who booked it
+                            isDisabled = 'disabled';
+                            action = '';
+                        }
+                    }
+
+                    // If user hasn't entered a name, disable booking
+                    if (!currentUser && !desk.occupant) {
+                        isDisabled = 'disabled';
+                    }
+
+                    desksHtml += `
+                        <button class="${className}" ${isDisabled} ${action}>
+                            <span class="desk-name">${desk.name}</span>
+                            <span class="occupant-name">${label}</span>
+                            <span class="cancel-text">Click to Cancel</span>
+                        </button>
+                    `;
+                });
+
+                dayCard.innerHTML = `
+                    <div class="day-header">
+                        <div>
+                            <span class="day-name">${day.formatted_date}</span>
+                        </div>
+                    </div>
+                    <div class="desk-grid">
+                        ${desksHtml}
+                    </div>
+                `;
+                container.appendChild(dayCard);
+            });
+        }
+
+        async function bookDesk(date, desk) {
+            const currentUser = document.getElementById('username').value.trim();
+            
+            if (!currentUser) {
+                showToast("Please enter your name first.");
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/book', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        name: currentUser,
+                        date: date,
+                        desk: desk
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    showToast("Desk booked successfully!");
+                    loadSchedule(); // Refresh data
+                } else {
+                    showToast(result.message);
+                }
+            } catch (error) {
+                showToast("An error occurred.");
+            }
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.innerText = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        async function cancelBooking(date, desk) {
+            const currentUser = document.getElementById('username').value.trim();
+            
+            if (!currentUser) {
+                showToast("Please enter your name first.");
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/cancel', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        name: currentUser,
+                        date: date,
+                        desk: desk
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    showToast("Booking cancelled successfully!");
+                    loadSchedule(); // Refresh data
+                } else {
+                    showToast(result.message);
+                }
+            } catch (error) {
+                showToast("An error occurred.");
+            }
+        }
+
+        function downloadSchedule() {
+            window.location.href = '/api/download';
+            showToast("Downloading schedule...");
+        }
+
+        // Initial Load
+        loadSchedule();
+    </script>
+</body>
+</html>

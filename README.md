@@ -10,10 +10,12 @@ A simple, elegant web-based desk booking system built with Flask and Python. Per
 - 🚫 **Conflict Prevention** - Can't double-book desks or book multiple desks per day
 - ❌ **Cancel Bookings** - Hover over your bookings to cancel them
 - 📥 **Excel Export** - Download all bookings as an Excel file
-- 🎨 **Apple-Inspired UI** - Clean, modern interface with smooth interactions
+- 🎨 **Modern UI** - Clean, elegant interface with smooth interactions
 - 🇩🇪 **German Holiday Support** - Automatically excludes Bavarian holidays
 
 ## Screenshots
+
+![Office Desk Booking Interface](example.png)
 
 The interface shows a weekly view with all available and booked desks at a glance.
 
@@ -102,7 +104,7 @@ Bookings are stored in `office_seating.xlsx` in the application directory. This 
 - **Backend**: Flask (Python)
 - **Frontend**: Vanilla JavaScript, HTML5, CSS3
 - **Data Storage**: Excel (via pandas and openpyxl)
-- **Styling**: Apple-inspired design system
+- **Styling**: Modern, clean design system
 
 ## API Endpoints
 
