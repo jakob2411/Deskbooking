@@ -5,8 +5,8 @@ Simple test to verify the Office Desk Booking System works correctly
 import sys
 import os
 
-# Add parent directory to path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# Add src directory to path
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'src'))
 
 def test_imports():
     """Test that all required modules can be imported"""

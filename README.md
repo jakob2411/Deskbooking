@@ -45,11 +45,36 @@ source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
+## Project Structure
+
+```
+Deskbooking/
+├── src/              # Application source code
+│   ├── app.py        # Main Flask application
+│   └── templates/    # HTML templates
+├── tests/            # Test files
+│   └── test_app.py   # Application tests
+├── config/           # Configuration files
+│   └── config_example.py  # Example configuration
+├── scripts/          # Setup and utility scripts
+│   ├── setup.sh      # Linux/Mac setup script
+│   └── setup.bat     # Windows setup script
+├── docs/             # Documentation
+│   ├── QUICKSTART.md
+│   ├── CONTRIBUTING.md
+│   ├── PUBLISHING_GUIDE.md
+│   └── READY_TO_PUBLISH.md
+├── requirements.txt  # Python dependencies
+├── README.md         # This file
+├── LICENSE           # MIT License
+└── example.png       # Screenshot
+```
+
 ## Usage
 
 1. Start the Flask server:
 ```bash
-python app.py
+python src/app.py
 ```
 
 2. Open your browser and navigate to:
@@ -81,7 +106,7 @@ Click the "📥 Download Schedule" button to export all bookings as an Excel fil
 
 ## Configuration
 
-You can customize the desk names in `app.py`:
+You can customize the desk names in `src/app.py`:
 
 ```python
 df = pd.DataFrame(columns=['Date', 'The Throne', 'Procrastination Station', 'Caffeine Corner', 'Innovation Island', 'Chaos Central'])
@@ -130,7 +155,7 @@ Created for managing office desk bookings in a fun and efficient way.
 
 **Port 5001 already in use?**
 - On macOS, port 5000 is used by AirPlay. The app uses port 5001 by default.
-- To change the port, edit `app.py` and modify:
+- To change the port, edit `src/app.py` and modify:
 ```python
 app.run(debug=False, host='127.0.0.1', port=YOUR_PORT)
 ```
