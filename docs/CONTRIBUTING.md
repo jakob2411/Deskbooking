@@ -16,9 +16,23 @@ Thank you for considering contributing to this project!
 2. Create a virtual environment: `python3 -m venv .venv`
 3. Activate it: `source .venv/bin/activate`
 4. Install dependencies: `pip install -r requirements.txt`
-5. Make your changes
-6. Test thoroughly
+5. Make your changes in the appropriate directory:
+   - `src/` for application code
+   - `tests/` for test files
+   - `docs/` for documentation
+   - `config/` for configuration examples
+6. Test thoroughly: `python tests/test_app.py`
 7. Submit a PR
+
+## Project Structure
+
+- **src/**: Application source code
+  - `app.py`: Main Flask application
+  - `templates/`: HTML templates
+- **tests/**: Test files
+- **config/**: Configuration examples
+- **scripts/**: Setup and utility scripts
+- **docs/**: Documentation files
 
 ## Code Style
 

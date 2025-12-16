@@ -6,12 +6,12 @@
 
 **Linux/Mac:**
 ```bash
-./setup.sh
+./scripts/setup.sh
 ```
 
 **Windows:**
 ```cmd
-setup.bat
+scripts\setup.bat
 ```
 
 **Manual Setup:**
@@ -24,7 +24,7 @@ pip install -r requirements.txt
 ### Step 2: Run
 
 ```bash
-python app.py
+python src/app.py
 ```
 
 ### Step 3: Open Browser
@@ -64,7 +64,7 @@ Click the **"📥 Download Schedule"** button to export all bookings as Excel
 
 ## ⚙️ Customization
 
-Edit `app.py` to customize:
+Edit `src/app.py` to customize:
 
 **Change desk names:**
 ```python
@@ -85,7 +85,7 @@ BAVARIAN_HOLIDAYS = holidays.Germany(subdiv='BY')  # Change 'BY' to your region
 **Port already in use?**
 - macOS uses port 5000 for AirPlay
 - App uses port 5001 by default
-- To change: Edit `app.py` line `app.run(debug=False, host='127.0.0.1', port=YOUR_PORT)`
+- To change: Edit `src/app.py` line `app.run(debug=False, host='127.0.0.1', port=YOUR_PORT)`
 
 **Can't create Excel file?**
 - Check write permissions in the app directory
