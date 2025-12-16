@@ -5,7 +5,7 @@ A simple, elegant web-based desk booking system built with Flask and Python. Per
 ## Features
 
 - 📅 **Current & Next Week Booking** - Book desks for today through the end of next week
-- 🪑 **5 Desks with Fun Names** - The Throne, Procrastination Station, Caffeine Corner, Innovation Island, and Chaos Central
+- 🪑 **5 Desks** - The Throne, Procrastination Station, Caffeine Corner, Innovation Island, and Chaos Central
 - 👤 **Personal Bookings** - See your bookings highlighted in green
 - 🚫 **Conflict Prevention** - Can't double-book desks or book multiple desks per day
 - ❌ **Cancel Bookings** - Hover over your bookings to cancel them
