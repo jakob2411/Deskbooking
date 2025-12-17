@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dschungelbüro</title>
+    <style>
+        :root {
+            --bg-color: #F5F5F7; /* Apple light gray */
+            --card-bg: #FFFFFF;
+            --text-primary: #1D1D1F;
+            --text-secondary: #86868B;
+            --accent: #0071E3; /* Apple Blue */
+            --accent-hover: #0077ED;
+            --occupied: #FF3B30; /* Apple Red */
+            --my-booking: #34C759; /* Apple Green */
+            --radius: 18px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 900px;
+            width: 100%;
+        }
+
+        h1 {
+            font-weight: 600;
+            font-size: 40px;
+            letter-spacing: -0.003em;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 19px;
+            margin-bottom: 40px;
+            font-weight: 400;
+        }
+
+        /* Input Section */
+        .user-input {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px);
+            padding: 20px;
+            border-radius: var(--radius);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        input[type="text"] {
+            padding: 12px 16px;
+            font-size: 17px;
+            border: 1px solid #d2d2d7;
+            border-radius: 12px;
+            width: 250px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        input[type="text"]:focus {
+            border-color: var(--accent);
+        }
+
+        /* Toggle Switch */
+        .view-toggle {
+            display: flex;
+            background: #E8E8ED;
+            padding: 4px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            width: fit-content;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .toggle-btn {
+            padding: 8px 24px;
+            border-radius: 9px;
+            border: none;
+            background: transparent;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: all 0.3s ease;
+        }
+        .toggle-btn.active {
+            background: white;
+            color: var(--text-primary);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* Grid Layout */
+        .grid-container {
+            display: grid;
+            gap: 20px;
+        }
+
+        .day-card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 25px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+            transition: transform 0.2s ease;
+        }
+        
+        .day-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #E5E5EA;
+            padding-bottom: 10px;
+        }
+        .day-name { font-size: 22px; font-weight: 600; }
+        .day-date { color: var(--text-secondary); font-size: 14px; }
+
+        .desk-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 12px;
+        }
+
+        .desk-btn {
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid #E5E5EA;
+            background: #FBFBFC;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .desk-btn:hover:not(:disabled) {
+            border-color: var(--accent);
+            transform: scale(1.02);
+        }
+
+        .desk-name { font-size: 14px; font-weight: 600; color: var(--text-secondary); }
+        .occupant-name { font-size: 13px; font-weight: 400; color: var(--text-primary); }
+
+        /* States */
+        .desk-btn.available {
+            /* default */
+        }
+        .desk-btn.occupied {
+            background-color: #FFF2F2; /* Light red bg */
+            border-color: transparent;
+            cursor: default;
+        }
+        .desk-btn.occupied .desk-name { color: var(--occupied); }
+        
+        .desk-btn.booked-by-me {
+            background-color: #E8FCEF; /* Light green bg */
+            border-color: var(--my-booking);
+            cursor: default;
+        }
+        .desk-btn.booked-by-me .desk-name { color: var(--my-booking); }
+
+        /* Booking View vs Occupancy View Logic handled in JS */
+        
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+        .toast.show { opacity: 1; }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Dschungelbüro</h1>
+        <div class="subtitle">Buche deinen Arbeitsplatz für die kommenden Tage</div>
+
+        <div class="user-input">
+            <label style="font-weight: 500;">Wie heißt du?</label>
+            <input type="text" id="username" placeholder="Name eingeben" onchange="loadSchedule()">
+        </div>
+
+        <div class="view-toggle">
+            <button class="toggle-btn active" onclick="setView('booking')">Platz buchen</button>
+            <button class="toggle-btn" onclick="setView('occupancy')">Belegung ansehen</button>
+        </div>
+
+        <div id="schedule-grid" class="grid-container">
+            </div>
+    </div>
+
+    <div id="toast" class="toast">Message</div>
+
+    <script>
+        let currentView = 'booking'; // 'booking' or 'occupancy'
+        let scheduleData = [];
+
+        function setView(view) {
+            currentView = view;
+            document.querySelectorAll('.toggle-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            renderGrid();
+        }
+
+        async function loadSchedule() {
+            try {
+                const response = await fetch('/api/schedule');
+                const data = await response.json();
+                scheduleData = data.schedule;
+                renderGrid();
+            } catch (error) {
+                console.error('Error loading schedule:', error);
+            }
+        }
+
+        function renderGrid() {
+            const container = document.getElementById('schedule-grid');
+            const currentUser = document.getElementById('username').value.trim();
+            container.innerHTML = '';
+
+            scheduleData.forEach(day => {
+                const dayCard = document.createElement('div');
+                dayCard.className = 'day-card';
+
+                let desksHtml = '';
+                
+                day.desks.forEach(desk => {
+                    let className = 'desk-btn available';
+                    let label = 'Verfügbar';
+                    let isDisabled = '';
+                    let action = `onclick="bookDesk('${day.date}', '${desk.name}')"`;
+
+                    if (desk.occupant) {
+                        if (desk.occupant === currentUser) {
+                            className = 'desk-btn booked-by-me';
+                            label = 'Von dir gebucht';
+                        } else {
+                            className = 'desk-btn occupied';
+                            label = currentView === 'occupancy' ? desk.occupant : 'Belegt';
+                        }
+                        isDisabled = 'disabled';
+                        action = '';
+                    } else if (currentView === 'occupancy') {
+                        // In occupancy view, disable empty buttons
+                        isDisabled = 'disabled';
+                        action = '';
+                    }
+
+                    // If user hasn't entered a name, disable booking
+                    if (!currentUser && currentView === 'booking') {
+                        isDisabled = 'disabled';
+                    }
+
+                    desksHtml += `
+                        <button class="${className}" ${isDisabled} ${action}>
+                            <span class="desk-name">${desk.name}</span>
+                            <span class="occupant-name">${label}</span>
+                        </button>
+                    `;
+                });
+
+                dayCard.innerHTML = `
+                    <div class="day-header">
+                        <span class="day-name">${day.day_name}</span>
+                        <span class="day-date">${day.date}</span>
+                    </div>
+                    <div class="desk-grid">
+                        ${desksHtml}
+                    </div>
+                `;
+                container.appendChild(dayCard);
+            });
+        }
+
+        async function bookDesk(date, desk) {
+            const currentUser = document.getElementById('username').value.trim();
+            
+            if (!currentUser) {
+                showToast("Bitte zuerst deinen Namen eingeben.");
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/book', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        name: currentUser,
+                        date: date,
+                        desk: desk
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    showToast("Platz erfolgreich gebucht!");
+                    loadSchedule(); // Refresh data
+                } else {
+                    showToast(result.message);
+                }
+            } catch (error) {
+                showToast("Es ist ein Fehler aufgetreten.");
+            }
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.innerText = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        // Initial Load
+        loadSchedule();
+    </script>
+</body>
+</html>

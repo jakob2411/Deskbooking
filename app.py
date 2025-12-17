@@ -1,5 +1,7 @@
 import os
-import pandas as pd
+import io
+import csv
+import sqlite3
 from flask import Flask, render_template, request, jsonify, send_file
 from datetime import datetime, timedelta, date
 import holidays
@@ -7,8 +9,37 @@ import holidays
 app = Flask(__name__)
 
 # --- Configuration ---
-EXCEL_FILE = 'office_seating.xlsx'
+DB_FILE = 'office_seating.db'
 BAVARIAN_HOLIDAYS = holidays.Germany(subdiv='BY')
+DESK_NAMES = ['Fenster links', 'Fenster rechts', 'Gang links', 'Gang rechts']
+
+
+def get_db():
+    conn = sqlite3.connect(DB_FILE)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+def init_db():
+    conn = get_db()
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS bookings (
+            date TEXT NOT NULL,
+            desk TEXT NOT NULL,
+            user TEXT NOT NULL,
+            PRIMARY KEY (date, desk)
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_bookings_user_date
+        ON bookings(user, date)
+        """
+    )
+    conn.commit()
+    conn.close()
 
 def get_current_and_next_week_dates():
     """Generates a list of dates (strings) for current and next week's work days."""
@@ -29,23 +60,18 @@ def get_current_and_next_week_dates():
     
     return work_days
 
-def init_excel():
-    """Initializes the Excel file with templates if it doesn't exist."""
-    if not os.path.exists(EXCEL_FILE):
-        # Create template structure with funny desk names
-        df = pd.DataFrame(columns=['Date', 'The Throne', 'Procrastination Station', 'Caffeine Corner', 'Innovation Island', 'Chaos Central'])
-        df.to_excel(EXCEL_FILE, index=False)
-
-def read_data():
-    """Reads the Excel file and normalizes it."""
-    init_excel()
-    df = pd.read_excel(EXCEL_FILE)
-    df['Date'] = df['Date'].astype(str) # Ensure dates are strings for comparison
-    return df
-
-def save_data(df):
-    """Saves the DataFrame back to Excel."""
-    df.to_excel(EXCEL_FILE, index=False)
+def fetch_bookings_for_dates(conn, dates):
+    if not dates:
+        return {}
+    placeholders = ','.join('?' for _ in dates)
+    rows = conn.execute(
+        f"SELECT date, desk, user FROM bookings WHERE date IN ({placeholders})",
+        dates,
+    ).fetchall()
+    bookings = {}
+    for row in rows:
+        bookings.setdefault(row['date'], {})[row['desk']] = row['user']
+    return bookings
 
 @app.route('/')
 def index():
@@ -55,17 +81,13 @@ def index():
 def get_schedule():
     """Returns the schedule for current and next week."""
     target_dates = get_current_and_next_week_dates()
-    df = read_data()
-    
-    # Get all desk columns (exclude 'Date')
-    desk_columns = [c for c in df.columns if c != 'Date']
+    conn = get_db()
+    bookings = fetch_bookings_for_dates(conn, target_dates)
+    desk_columns = DESK_NAMES
     
     schedule = []
     
     for d in target_dates:
-        # Check if row exists for this date
-        row = df[df['Date'] == d]
-        
         # Format date as "Tuesday, 30.01.2026"
         date_obj = datetime.strptime(d, '%Y-%m-%d')
         formatted_date = date_obj.strftime('%A, %d.%m.%Y')
@@ -77,12 +99,7 @@ def get_schedule():
         }
         
         for desk in desk_columns:
-            occupant = None
-            if not row.empty:
-                val = row.iloc[0][desk]
-                if pd.notna(val) and str(val).strip() != "":
-                    occupant = str(val)
-            
+            occupant = bookings.get(d, {}).get(desk)
             day_data['desks'].append({
                 'name': desk,
                 'occupant': occupant
@@ -102,31 +119,31 @@ def book_seat():
     if not user_name or not target_date or not target_desk:
         return jsonify({'success': False, 'message': 'Missing information.'}), 400
 
-    df = read_data()
-    
-    # 1. Check if row exists for date, if not create it
-    if target_date not in df['Date'].values:
-        new_row = {col: None for col in df.columns}
-        new_row['Date'] = target_date
-        df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
+    conn = get_db()
 
-    # Get the index of the date
-    idx = df.index[df['Date'] == target_date].tolist()[0]
-    
-    # 2. Check if desk is already taken
-    current_occupant = df.at[idx, target_desk]
-    if pd.notna(current_occupant) and str(current_occupant).strip() != "":
+    # 1. Check if desk is already taken
+    existing = conn.execute(
+        "SELECT user FROM bookings WHERE date = ? AND desk = ?",
+        (target_date, target_desk),
+    ).fetchone()
+    if existing:
         return jsonify({'success': False, 'message': 'Desk already taken.'}), 409
 
-    # 3. Check if USER has already booked a desk for this day (Max 1 rule)
-    row_data = df.iloc[idx]
-    for col in df.columns:
-        if col != 'Date' and row_data[col] == user_name:
-             return jsonify({'success': False, 'message': 'You have already booked a seat for this day.'}), 400
+    # 2. Check if user already booked this date
+    already = conn.execute(
+        "SELECT 1 FROM bookings WHERE date = ? AND user = ?",
+        (target_date, user_name),
+    ).fetchone()
+    if already:
+        return jsonify({'success': False, 'message': 'You have already booked a seat for this day.'}), 400
 
-    # 4. Book the seat
-    df.at[idx, target_desk] = user_name
-    save_data(df)
+    # 3. Book the seat
+    conn.execute(
+        "INSERT INTO bookings (date, desk, user) VALUES (?, ?, ?)",
+        (target_date, target_desk, user_name),
+    )
+    conn.commit()
+    conn.close()
     
     return jsonify({'success': True})
 
@@ -141,35 +158,50 @@ def cancel_booking():
     if not user_name or not target_date or not target_desk:
         return jsonify({'success': False, 'message': 'Missing information.'}), 400
     
-    df = read_data()
-    
-    # Check if booking exists
-    if target_date not in df['Date'].values:
-        return jsonify({'success': False, 'message': 'No booking found.'}), 404
-    
-    idx = df.index[df['Date'] == target_date].tolist()[0]
-    current_occupant = df.at[idx, target_desk]
-    
-    # Check if the user owns this booking
-    if pd.isna(current_occupant) or str(current_occupant).strip() == "":
+    conn = get_db()
+
+    current = conn.execute(
+        "SELECT user FROM bookings WHERE date = ? AND desk = ?",
+        (target_date, target_desk),
+    ).fetchone()
+
+    if not current:
         return jsonify({'success': False, 'message': 'No booking to cancel.'}), 404
-    
-    if current_occupant != user_name:
+
+    if current['user'] != user_name:
         return jsonify({'success': False, 'message': 'You can only cancel your own bookings.'}), 403
-    
-    # Cancel the booking
-    df.at[idx, target_desk] = None
-    save_data(df)
+
+    conn.execute(
+        "DELETE FROM bookings WHERE date = ? AND desk = ?",
+        (target_date, target_desk),
+    )
+    conn.commit()
+    conn.close()
     
     return jsonify({'success': True})
 
 @app.route('/api/download', methods=['GET'])
 def download_schedule():
-    """Download the Excel file with all bookings."""
-    if not os.path.exists(EXCEL_FILE):
-        init_excel()
-    return send_file(EXCEL_FILE, as_attachment=True, download_name='office_seating.xlsx')
+    """Download all bookings as CSV."""
+    conn = get_db()
+    rows = conn.execute(
+        "SELECT date, desk, user FROM bookings ORDER BY date, desk"
+    ).fetchall()
+    conn.close()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(['Date', 'Desk', 'User'])
+    for row in rows:
+        writer.writerow([row['date'], row['desk'], row['user']])
+
+    mem = io.BytesIO(output.getvalue().encode('utf-8'))
+    mem.seek(0)
+    return send_file(mem, as_attachment=True, download_name='office_seating.csv', mimetype='text/csv')
+
+init_db()
 
 if __name__ == '__main__':
-    init_excel()
-    app.run(debug=False, host='127.0.0.1', port=5001)
+    host = os.environ.get('HOST', '0.0.0.0')
+    port = int(os.environ.get('PORT', 5001))
+    app.run(debug=False, host=host, port=port)

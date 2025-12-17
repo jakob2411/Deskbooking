@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Office Booking</title>
+    <title>Dschungelbüro</title>
     <style>
         :root {
             --bg-color: #F5F5F7; /* Apple light gray */
@@ -204,115 +204,20 @@
         }
         .toast.show { opacity: 1; }
 
-        /* Media Queries for Mobile Responsiveness */
-        
-        /* Tablet and smaller devices (max-width: 768px) */
-        @media (max-width: 768px) {
-            body {
-                padding: 30px 15px;
-            }
-
-            h1 {
-                font-size: 32px;
-            }
-
-            .subtitle {
-                font-size: 17px;
-                margin-bottom: 30px;
-            }
-
-            input[type="text"] {
-                width: 100%;
-            }
-
-            .desk-grid {
-                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            }
-
-            .grid-container {
-                gap: 15px;
-            }
-
-            .day-card {
-                padding: 20px;
-            }
-        }
-
-        /* Small mobile devices (max-width: 480px) */
-        @media (max-width: 480px) {
-            body {
-                padding: 20px 10px;
-            }
-
-            h1 {
-                font-size: 28px;
-            }
-
-            .subtitle {
-                font-size: 16px;
-                margin-bottom: 25px;
-            }
-
-            .user-input {
-                flex-direction: column;
-                align-items: stretch;
-                gap: 10px;
-                padding: 15px;
-            }
-
-            .user-input label {
-                text-align: center;
-            }
-
-            .download-btn {
-                padding: 14px 24px;
-                font-size: 16px;
-            }
-
-            .desk-grid {
-                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-                gap: 10px;
-            }
-
-            .grid-container {
-                gap: 12px;
-            }
-
-            .day-card {
-                padding: 15px;
-            }
-
-            .day-header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 5px;
-            }
-
-            .day-name,
-            .day-date {
-                font-size: 20px;
-            }
-
-            .desk-btn {
-                min-height: 44px;
-                padding: 12px 10px;
-            }
-        }
-
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h1>Office Seating</h1>
-        <div class="subtitle">Book your workspace for next week</div>
+        <h1>Dschungelbüro</h1>
+        <div class="subtitle">Buche deinen Arbeitsplatz für die kommenden Tage</div>
 
         <div class="user-input">
-            <label style="font-weight: 500;">Who are you?</label>
-            <input type="text" id="username" placeholder="Enter your name" onchange="loadSchedule()">
+            <label style="font-weight: 500;">Wie heißt du?</label>
+            <input type="text" id="username" placeholder="Name eingeben" onchange="loadSchedule()">
         </div>
 
-        <button class="download-btn" onclick="downloadSchedule()">📥 Download Schedule</button>
+        <button class="download-btn" onclick="downloadSchedule()">📥 Plan herunterladen</button>
 
         <div id="schedule-grid" class="grid-container">
             </div>
@@ -347,14 +252,14 @@
                 
                 day.desks.forEach(desk => {
                     let className = 'desk-btn available';
-                    let label = 'Available';
+                    let label = 'Verfügbar';
                     let isDisabled = '';
                     let action = `onclick="bookDesk('${day.date}', '${desk.name}')"`;
 
                     if (desk.occupant) {
                         if (desk.occupant === currentUser) {
                             className = 'desk-btn booked-by-me';
-                            label = 'You';
+                            label = 'Du';
                             action = `onclick="cancelBooking('${day.date}', '${desk.name}')"`;
                         } else {
                             className = 'desk-btn occupied';
@@ -373,7 +278,7 @@
                         <button class="${className}" ${isDisabled} ${action}>
                             <span class="desk-name">${desk.name}</span>
                             <span class="occupant-name">${label}</span>
-                            <span class="cancel-text">Click to Cancel</span>
+                            <span class="cancel-text">Zum Stornieren klicken</span>
                         </button>
                     `;
                 });
@@ -396,7 +301,7 @@
             const currentUser = document.getElementById('username').value.trim();
             
             if (!currentUser) {
-                showToast("Please enter your name first.");
+                showToast("Bitte zuerst deinen Namen eingeben.");
                 return;
             }
 
@@ -414,13 +319,13 @@
                 const result = await response.json();
                 
                 if (result.success) {
-                    showToast("Desk booked successfully!");
+                    showToast("Platz erfolgreich gebucht!");
                     loadSchedule(); // Refresh data
                 } else {
                     showToast(result.message);
                 }
             } catch (error) {
-                showToast("An error occurred.");
+                showToast("Es ist ein Fehler aufgetreten.");
             }
         }
 
@@ -435,7 +340,7 @@
             const currentUser = document.getElementById('username').value.trim();
             
             if (!currentUser) {
-                showToast("Please enter your name first.");
+                showToast("Bitte zuerst deinen Namen eingeben.");
                 return;
             }
 
@@ -453,19 +358,19 @@
                 const result = await response.json();
                 
                 if (result.success) {
-                    showToast("Booking cancelled successfully!");
+                    showToast("Buchung wurde storniert!");
                     loadSchedule(); // Refresh data
                 } else {
                     showToast(result.message);
                 }
             } catch (error) {
-                showToast("An error occurred.");
+                showToast("Es ist ein Fehler aufgetreten.");
             }
         }
 
         function downloadSchedule() {
             window.location.href = '/api/download';
-            showToast("Downloading schedule...");
+            showToast("Plan wird heruntergeladen...");
         }
 
         // Initial Load
